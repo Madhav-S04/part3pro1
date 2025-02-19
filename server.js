@@ -1,8 +1,18 @@
 const express = require('express');
+const morgan = require('morgan');
+
 const app = express();
 
-// Middleware to parse JSON
+// Middleware
 app.use(express.json());
+
+// Custom Morgan token to log request body for POST requests
+morgan.token('post-data', (req) => {
+    return req.method === 'POST' ? JSON.stringify(req.body) : ''; // Only log body for POST
+});
+
+// Use Morgan with our custom format
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post-data'));
 
 let persons = [
     { id: "1", name: "Arto Hellas", number: "040-123456" },
@@ -12,68 +22,11 @@ let persons = [
 ];
 
 /**
- *  Root URL - Home Page
- *  Route: GET http://localhost:3001/
- */
-app.get('/', (req, res) => {
-    res.send(`
-        <h1>Phonebook Backend</h1>
-        <p>Available routes:</p>
-        <ul>
-            <li><a href="/api/persons">GET /api/persons</a> - Get all phonebook entries</li>
-            <li><a href="/info">GET /info</a> - Get phonebook statistics</li>
-        </ul>
-    `);
-});
-
-/**
  *  Get all persons
  *  Route: GET http://localhost:3001/api/persons
  */
 app.get('/api/persons', (req, res) => {
     res.json(persons);
-});
-
-/**
- *  Get phonebook information
- *  Route: GET http://localhost:3001/info
- */
-app.get('/info', (req, res) => {
-    res.send(`
-        <h1>Phonebook Info</h1>
-        <p>Phonebook has info for ${persons.length} people</p>
-        <p>Current time: ${new Date()}</p>
-    `);
-});
-
-/**
- *  Get a single person by ID
- *  Route: GET http://localhost:3001/api/persons/:id
- */
-app.get('/api/persons/:id', (req, res) => {
-    const person = persons.find(p => p.id === req.params.id);
-
-    if (person) {
-        res.json(person);
-    } else {
-        res.status(404).json({ error: 'Person not found' });
-    }
-});
-
-/**
- *  Delete a person by ID
- *  Route: DELETE http://localhost:3001/api/persons/:id
- */
-app.delete('/api/persons/:id', (req, res) => {
-    const id = req.params.id;
-    const initialLength = persons.length;
-    persons = persons.filter(p => p.id !== id);
-
-    if (persons.length < initialLength) {
-        res.status(204).end(); // No Content (successful deletion)
-    } else {
-        res.status(404).json({ error: 'Person not found' });
-    }
 });
 
 /**
